@@ -1,1 +1,4 @@
 jabalies-own [energia felicidad velocidad]
+
+patches-own [ticks_since_jabali ticks_since_human] //ticks desde la ultima vez que pasó un jabalí/humano
+//MUY IMPORTANTES ESTAS VARIABLES, DEFINEN EL RESULTADO DEL EXPERIMENTO!!!!!
