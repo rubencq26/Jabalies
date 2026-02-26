@@ -45,7 +45,7 @@ Modelo espacial discreto dividido en dos regiones conectadas:
 - Reproduccion bajo condiciones favorables.
 - Migracion si hay superpoblacion o escasez.
 
-### Jabalíes
+### Cazador
 
 - Reducen poblacion forestal.
 - Aumentan presion migratoria.
