@@ -1,17 +1,77 @@
-patches-own [polucion]
+; sliders
+;
+;
+
+patches-own [polucion ticks_since_jabali ticks_since_human]
 breed [jabalies jabali]
 breed [personas persona]
-jabalies-own [energia miedo]
-personas-own []
+breed [comidas comida]
+
+
+globals [dias]
+
+
+jabalies-own [energia felicidad velocidad xcomida ycomida]
+
+personas-own [satisfaccion tipo velocidad] ; ( satisfaccion: [0, 100] )  ( tipo: "adverso" || "neutral" || "alimentador" )
 
 
 to setup
 
   ca
+  reset-ticks
+  set dias 0
   ask patches [set polucion 0 set pcolor green]
   ask patches with [pxcor > 0] [set pcolor grey]
-  generar_jabalies(njabaliesinicial)
-  generar_personas(npersonasinicial)
+  ;GENERA CONTENEDORES INICIALMENTE
+
+  ask patches with [pcolor = grey and (pxcor mod 8 = 0) and (pycor mod 8 = 0)] [
+
+   ifelse (random 100 < 30) [ ;prob_contenedor_inteligente es un SLIDER
+
+    set pcolor yellow - 1
+
+   ] [
+
+    set pcolor green - 2
+
+   ]
+
+  ]
+
+  ;GENERA PASTO ALEATORIAMENTE
+
+  ask n-of 15 patches with [pcolor = green] [
+
+    if count comidas-here = 0 [
+    sprout 1 [
+
+      set breed comidas
+      set color green - 2
+      set shape "plant"
+
+    ]
+    ]
+    ask n-of 2 neighbors4 [
+
+      if (pcolor = green and (count comidas-here = 0)) [
+
+        sprout 1 [
+
+         set breed comidas
+         set color green - 2
+         set shape "plant"
+
+         ]
+
+      ]
+
+    ]
+
+  ]
+
+  generar_jabalies(30)
+  generar_personas
 
 end
 
@@ -22,7 +82,8 @@ to generar_jabalies [cuantos]
     sprout 1 [
 
       set breed jabalies
-      set miedo random 100
+      set size 1
+      set felicidad random 100
       set energia 100
       set color brown
 
@@ -32,19 +93,89 @@ to generar_jabalies [cuantos]
 
 end
 
-to generar_personas [cuantos]
+to generar_personas
+  ; nadversos, nneutrales y nalimentadores son sliders [0, 100]
+   create-personas 5 [
+    set tipo "adverso"
+    set color red
+  ]
+  create-personas 5 [
+    set tipo "neutral"
+    set color white
+  ]
+  create-personas 5 [
+    set tipo "alimentador"
+    set color pink
+  ]
+  ask personas [
+    set satisfaccion (random 10) + 45
+    set shape "person"
+    setxy [pxcor] of one-of patches with [pcolor = gray] [pycor] of one-of patches with [pcolor = gray]
+    set velocidad 0.1
+  ]
 
-  ask n-of cuantos patches with [pcolor = grey] [
+end
 
-    sprout 1 [
 
-      set breed personas
+to mover_personas
+  let destino one-of patches with [pcolor = grey]
+  face destino
+  wiggle(0.1)
+  ;fd 0.1
+  ask patch-here [set ticks_since_human 0]
+
+
+end
+
+to cazar [caza]
+  face caza
+  while [distance caza > 2] [
+    fd 0.15
+    ask patch-here [set ticks_since_human 0]
+  ]
+  ask caza [die]
+end
+
+to alimentar [mascotita]
+  while [distance mascotita > 0.2] [
+    face mascotita
+    repeat 10 [wiggle 0.01]
+    ask patch-here [set ticks_since_human 0]
+  ]
+  ask mascotita [
+    set felicidad felicidad + (random 100)
+    if felicidad > 100 [ set felicidad 100 ]
+  ]
+end
+
+to reproducir_personas
+  let hijos (random 100) + 1
+
+  if hijos < 70 [
+    hatch 1
+  ]
+  if hijos >= 70 and hijos < 90 [
+
+    hatch 2 [
+      let personalidad (random 3)
+
+      set satisfaccion (random 10) + 45
       set shape "person"
-      set color pink
+      set velocidad 0.1
+      if personalidad = 0 [
+        set tipo "alimentador"
+        set color pink]
+      if personalidad = 1 [
+        set tipo "neutral"
+        set color white]
+      if personalidad = 2  [
+        set tipo "adverso"
+        set color red]
 
     ]
-
   ]
+  if hijos >= 90 []
+
 
 end
 
@@ -52,18 +183,77 @@ to go
 
   while [count jabalies > 0] [
   ask jabalies with [energia > 0] [moverjabali]
+
+  ;ACCIONES DE UNA PERSONA
+  ask personas [
+      mover_personas
+      let salvajes jabalies in-cone 5 60
+      if tipo = "adverso" and any? salvajes [cazar (one-of salvajes)]
+      if tipo = "alimentador" and any? salvajes [alimentar (one-of salvajes)]
+      if (random 100) = 0 [ die ]
+      if (random 100) = 0 [ reproducir_personas ]
+    ]
   ]
 
+  ;FUNCIONES RELACIONADAS CON CONTENEDORES
+
+
+
+  ;FIN FUNCIONES RELACIONADAS CON CONTENEDORES
+
+  ;FUNCIONES RELACIONADAS CON PASTO
+
+
+
+  ;FIN FUNCIONES RELACIONADAS CON PASTO
+
+  ;REGULACION TERRITORIO URBANO/RURAL
+
+  ask patches with [ticks_since_jabali > min_dias_construccion] [ ;min_dias_construccion es SLIDER
+
+      if count neighbors4 with [pcolor != green] > 0 [ ;si lindo con la ciudad
+
+        set pcolor grey
+
+   ]
+
+  ]
+
+    ask patches with [ticks_since_human > min_dias_derrumbe] [ ;min_dias_derrumbe es SLIDER
+
+      if (count neighbors4 with [pcolor = green] > 0) [ ;si lindo con la ciudad
+
+        set pcolor green
+
+      ]
+
+    ]
+
+    ;FIN REGULACION TERRITORIO URBANO/RURAL
+
+end
+
+to percibirjabali
+  ask jabalies[
+
+    if felicidad < 50 [
+      let alimento min-one-of comidas [distance myself]
+      face alimento
+    ]
+
+    if felicidad >= 50 [
+      ;evitar jabalies y buscar manadas < 7
+    ]
+  ]
 end
 
 to moverjabali
 
-  set energia energia - 1
-  if (random 100 > 60) [
+  if (ticks mod 24 > 20 or ticks mod 24 < 4) [
 
     repeat 10 [
 
-      wiggle
+      wiggle (0.1)
 
     ]
 
@@ -71,22 +261,22 @@ to moverjabali
 
 end
 
-to wiggle
+to wiggle [distancia]
 
-  rt random 10
-  lt random 10
-  fd 0.1
+  rt random 1
+  lt random 1
+  fd distancia
 
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+513
 10
-647
-448
+1084
+582
 -1
 -1
-13.0
+9.23
 1
 10
 1
@@ -96,10 +286,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-30
+30
+-30
+30
 0
 0
 1
@@ -169,6 +359,81 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+30
+217
+202
+250
+nadversos
+nadversos
+0
+100
+50.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+30
+251
+202
+284
+nalimentadores
+nalimentadores
+0
+100
+50.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+29
+283
+201
+316
+nneutrales
+nneutrales
+0
+100
+49.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+39
+352
+211
+385
+min_dias_construccion
+min_dias_construccion
+0
+100
+50.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+40
+392
+212
+425
+min_dias_derrumbe
+min_dias_derrumbe
+0
+100
+50.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
