@@ -1,4 +1,4 @@
-patches-own [pollucion]
+patches-own [polucion]
 breed [jabalies jabali]
 breed [personas persona]
 jabalies-own [energia miedo]
@@ -8,27 +8,16 @@ personas-own []
 to setup
 
   ca
-  ask patches [set pollucion 0 set pcolor green]
-  ask patch 0 0 [set pollucion 10 set pcolor black ask neighbors [polucion(10)] ]
+  ask patches [set polucion 0 set pcolor green]
+  ask patches with [pxcor > 0] [set pcolor grey]
   generar_jabalies(njabaliesinicial)
   generar_personas(npersonasinicial)
 
 end
 
-to polucion [nivel]
-
-  if pollucion < nivel and (random 3) != 2
-  [
-    set pollucion nivel - (random 2) + 1
-    set pcolor green - (pollucion * 0.4)
-    ask neighbors [polucion(nivel - 1)]
-  ]
-
-end
-
 to generar_jabalies [cuantos]
 
-  ask n-of cuantos patches with [pollucion = 0] [
+  ask n-of cuantos patches with [pcolor = green] [
 
     sprout 1 [
 
@@ -45,7 +34,7 @@ end
 
 to generar_personas [cuantos]
 
-  ask n-of cuantos patches with [pollucion > 0] [
+  ask n-of cuantos patches with [pcolor = grey] [
 
     sprout 1 [
 
@@ -143,7 +132,7 @@ njabaliesinicial
 njabaliesinicial
 1
 30
-15.0
+14.0
 1
 1
 NIL
