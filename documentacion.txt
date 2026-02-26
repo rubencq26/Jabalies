@@ -1,0 +1,33 @@
+## WHAT IS IT?
+
+Una simulación en la que se modela el comportamiento de una población de jabalíes asentada al lado de un área urbana. 
+
+Los jabalíes buscan comida, huyen de aquello que intente hacerles daño y se reproducen. Las personas, en cambio, se mueven con libertad prefiriendo el interior de los límites de la zona urbanizada. A lo largo del tiempo, la frontera entre la zona silvestre y lo que consideramos ciudad se modifica por los comportamientos de sendos jabalíes y personas.
+
+## HOW IT WORKS
+
+El mundo se divide en dos zonas:
+Zona silvestre (verde). Es el hábitat de los jabalíes. Cueta con una fuente automática de comida: la vegetación, y además protege a los jabalíes del ataque de los humanos, que por lo general prefieren no salir de la ciudad. 
+
+Zona urbanizada / ciudad (gris). Es el hábitat de las personas. Cuenta con espacios designados para contenedores (los cuadrados dentro de la ciudad) en los que los ciudadanos depositan periódicamente su basura. Algunos de estos contenedores (los amarillos) son especiales e impiden la entrada de jabalíes buscando alimento, el resto no lo evita y por tanto se pueden convertir en objetivos más fáciles de atacar que el pasto.
+
+La frontera entre ambas zonas es dinámica. Cuando pasa un número determinado de días (MIN_DIAS_DERRUMBE) en los que ningún humano ha pisado una parcela de ciudad que colinde con la zona silvestre, esta pasa a ser zona silvestre, adquiriendo todas las características de la misma. En cambio, si pasa un número determinado de días (MIN_DIAS_CONSTRUCCION) en los que ningún jabalí ha pisado una parcela silvestre que colinde con la ciudad, los humanos conquistan el territorio y dicha parcela pasa a ser territorio urbano con todas sus características.
+
+
+Sobre el terreno coexisten tres razas (breeds) de agente en el modelo:
+Personas. Son los habitantes de la zona urbanizada, se mueven hacia un destino aleatorio -priorizando el terreno urbanizado- hasta llegar a él. Su actitud ante los jabalíes puede ser adversa, los matan al verlos; neutral, los ignoran; o amigable, alimentándolos como si fueran mascotas. La población total de personas en esta simulación es fija.
+
+Jabalíes. Habitan predominantemente en la zona silvestre y están en continuo movimiento. Cada hora (tick) que pasa, escanean su entorno y actualizan su comportamiento acordemente: al detectar la presencia de una persona adversa, realizan un giro de 180 grados e incrementan su velocidad para huir; al detectar la de una persona amigable, dirigen su trayectoria a esta para ser alimentado; cuando en su vecindad coexisten más de 6 jabalíes, se siente abrumado y huye, cuando no hay ningún otro, dirige su trayectoria al jabalí más cercano. Cuando todo en su entorno está correcto, busca comida. Cada hora hay una posibilidad de que dos jabalíes que se encuentren cerca tengan una cría, reproduciéndose. Los jabalíes sólo pueden morir si algo de su entorno les mata.
+
+Comida. Objetivo de los jabalíes. Se genera automáticamente en la zona silvestre por el crecimiento de pasto (esta comida es verde). En la ciudad, conforme pasan las horas se genera automáticamente en los lugares designados para contenedores ordinarios, que por falta de control permiten la entrada de jabalíes que buscan alimento. Además, las personas tienen una probabilidad de tirar sus propios desechos a la calle mientras caminan (esta basura es marrón).
+
+
+## HOW TO USE IT
+
+Mediante los diferentes sliders se pueden modificar todos los parámetros del modelo. Diferentes configuraciones iniciales derivan en diferente comportamiento por parte de personas y jabalíes. Una vez que todo esté configurado, presione el botón de setup que creará un mundo nuevo y lo poblará acorde a la configuración; después, presiona go para iniciar el reloj.
+
+## THINGS TO NOTICE
+
+En muchos casos, la presencia de jabalíes en territorio urbano es casi inevitable. Esta simulación pretende demostrar con un caso muy sencillo como la convivencia cercana de poblaciones silvestres de animales puede resultar más fácilmente de lo que parece en numerosos animales atravesando la frontera en busca de alimento.
+
+
