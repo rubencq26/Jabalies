@@ -1,0 +1,100 @@
+breed [depredadores depredador]
+depredadores-own[velcidad objetivo]
+
+to generar_depredadores
+  create-depredadores numdepredadores [
+    setxy [pxcor] of one-of patches with [pcolor = green]
+          [pycor] of one-of patches with [pcolor = green]
+    set color black
+    set shape "wolf"
+    set velocidad 0.15
+  ]
+end
+
+to percibirdepredador
+  ; solo en zona verde
+  if [pcolor] of patch-here != green [
+    rt 180
+    fd 1
+  ]
+
+  ; buscar presas
+  let presas jabalies in-cone 5 60
+
+  if any? presas [
+    set objetivo min-one-of presas [distance myself]
+    face objetivo
+  ]
+  
+end
+
+to moverdepredador
+  
+  if objetivo != nobody [
+    
+    if distance objetivo > 1 [
+      fd velocidad
+    ]
+    
+    if distance objetivo <= 1 [
+      ask objetivo [ die ]
+      set objetivo nobody
+    ]
+    
+  ]
+  
+  ; Movimiento aleatorio si no hay objetivo
+  if objetivo = nobody [
+    rt random 20 - random 20
+    repeat 10[
+      wiggle[velocidad]
+  ]
+end
+
+
+
+
+
+    ;jabalies
+to percibirjabali ; actualiza la direc y veloc segun el entorno
+  ask jabalies [
+
+    ; Escanear peligros
+    let peligros personas in-cone 5 60 with [tipo = "adverso"] ;ERROR CON LA S FINAL 
+    let cazadores depredadores in-cone 5 60 
+    if nhuida > 0 [
+      huir
+      set nhuida (nhuida - 1)
+    ]
+    if any? peligros [
+      set nhuida 10
+      rt 180
+      huir
+    ]
+    if any? cazadores[
+      set nhuida 10
+      rt 180
+      huir
+    ]
+
+    ; Escanear comida
+    buscarcomida
+
+    ; Escanear hacinamiento y soledad
+    let vecinos jabalies in-radius 3
+    if count vecinos > 7 [ ; si hay hacinamiento, huir
+      rt 180
+      set nhuida 5
+      huir
+    ]
+    ifelse count vecinos > 0 
+    [  ; si hay soledad, acercarse
+        face min-one-of other jabalies [ distance myself ]
+        set velocidad 0.1
+    ]
+    [  ; si no hay hacinamiento ni soledad, moverse normalmente
+        set velocidad 0.1
+    ]
+
+  ]
+end
