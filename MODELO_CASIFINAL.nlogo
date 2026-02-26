@@ -13,7 +13,7 @@ breed [comidas comida]
 
 patches-own [polucion ticks_since_jabali ticks_since_human]
 jabalies-own [energia felicidad velocidad xcomida ycomida nhuida]
-personas-own [satisfaccion tipo velocidad] ; ( satisfaccion: [0, 100] )  ( tipo: "adverso" || "neutral" || "alimentador" )
+personas-own [satisfaccion tipo velocidad destino] ; ( satisfaccion: [0, 100] )  ( tipo: "adverso" || "neutral" || "alimentador" )
 
 
 ; -------------------------------------------------------------------------------------------------
@@ -122,6 +122,7 @@ to generar_personas
     set shape "person"
     setxy [pxcor] of one-of patches with [pcolor = gray] [pycor] of one-of patches with [pcolor = gray]
     set velocidad 0.1
+    set destino one-of patches with [ pcolor = gray ]
   ]
 
 end
@@ -133,10 +134,15 @@ end
 to go
 
   while [count jabalies > 0] [
-  ask jabalies with [energia > 0] [
+  ask jabalies [
 
       percibirjabali
       moverjabali
+
+    ]
+    ask n-of 5 jabalies [
+
+      reproducirjabali
 
     ]
 
@@ -166,10 +172,10 @@ to go
 
   ;REGULACION TERRITORIO URBANO/RURAL (FRANJA)
 
-    ask patches [set ticks_since_jabali ticks_since_jabali + 1 set ticks_since_human ticks_since_human + 1]
-  ask patches with [(ticks_since_jabali / 24) > min_dias_construccion] [ ;min_dias_construccion es SLIDER
+  ask patches [set ticks_since_jabali ticks_since_jabali + 1 set ticks_since_human ticks_since_human + 1]
+  ask patches with [(ticks_since_jabali / 24) > min_dias_construccion and pcolor = green] [ ;min_dias_construccion es SLIDER
 
-      if count neighbors4 with [pcolor != green] > 0 [ ;si lindo con la ciudad
+      if (count neighbors4 with [pcolor != green] > 0) and count comidas-here = 0 [ ;si lindo con la ciudad
 
         set pcolor grey
 
@@ -177,9 +183,9 @@ to go
 
   ]
 
-    ask patches with [(ticks_since_human / 24) > min_dias_derrumbe] [ ;min_dias_derrumbe es SLIDER
+    ask patches with [(ticks_since_human / 24) > min_dias_derrumbe and pcolor != green] [ ;min_dias_derrumbe es SLIDER
 
-      if (count neighbors4 with [pcolor = green] > 0) [ ;si lindo con la ciudad
+      if (count neighbors4 with [pcolor = green] > 0) and count comidas-here = 0 [ ;si lindo con la ciudad
 
         set pcolor green
 
@@ -219,7 +225,7 @@ end
 
 ; PERSONAS --------------------------------------
 to mover_personas
-  let destino one-of patches with [pcolor = grey]
+  if patch-here = destino [ set destino one-of patches with [ pcolor = gray ]]
   face destino
   repeat 10 [ wiggle(0.1) ]
   ask patch-here [set ticks_since_human 0]
@@ -337,9 +343,9 @@ to percibirjabali
       huir
 
     ]
-    ifelse felicidad < 50 [
+
       buscarcomida
-    ] [
+
       let vecinos jabalies in-radius 3
       if count vecinos > 7[
         rt 180
@@ -353,7 +359,7 @@ to percibirjabali
         set velocidad 0.1
       ]
 
-    ]
+
 
   ]
 
@@ -401,8 +407,8 @@ to moverjabali
 end
 
 to reproducirjabali
-  let pareja count jabalies-on patch-here
-  if pareja > 2[
+  let pareja count jabalies in-radius 2.5
+  if pareja > 2 and pareja < 7[
     if random 100 < prob_rep_jabalies;CREAR SLIDER
     [
       hatch 1 [
@@ -443,8 +449,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -30
 30
@@ -574,7 +580,7 @@ min_dias_construccion
 min_dias_construccion
 0
 100
-15.0
+5.0
 1
 1
 NIL
@@ -589,7 +595,7 @@ min_dias_derrumbe
 min_dias_derrumbe
 0
 100
-15.0
+4.0
 1
 1
 NIL
@@ -604,7 +610,7 @@ prob_rep_jabalies
 prob_rep_jabalies
 0
 100
-80.0
+60.0
 1
 1
 NIL
