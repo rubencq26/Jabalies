@@ -737,39 +737,63 @@ dias
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+Una simulación en la que se modela el comportamiento de una población de jabalíes asentada al lado de un área urbana. 
+
+Los jabalíes buscan comida, huyen de aquello que intente hacerles daño y se reproducen. Las personas, en cambio, se mueven con libertad prefiriendo el interior de los límites de la zona urbanizada. A lo largo del tiempo, la frontera entre la zona silvestre y lo que consideramos ciudad se modifica por los comportamientos de sendos jabalíes y personas.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+El mundo se divide en dos zonas:
+Zona silvestre (verde). Es el hábitat de los jabalíes. Cueta con una fuente automática de comida: la vegetación, y además protege a los jabalíes del ataque de los humanos, que por lo general prefieren no salir de la ciudad. 
+
+Zona urbanizada / ciudad (gris). Es el hábitat de las personas. Cuenta con espacios designados para contenedores (los cuadrados dentro de la ciudad) en los que los ciudadanos depositan periódicamente su basura. Algunos de estos contenedores (los amarillos) son especiales e impiden la entrada de jabalíes buscando alimento, el resto no lo evita y por tanto se pueden convertir en objetivos más fáciles de atacar que el pasto.
+
+La frontera entre ambas zonas es dinámica. Cuando pasa un número determinado de días (MIN_DIAS_DERRUMBE) en los que ningún humano ha pisado una parcela de ciudad que colinde con la zona silvestre, esta pasa a ser zona silvestre, adquiriendo todas las características de la misma. En cambio, si pasa un número determinado de días (MIN_DIAS_CONSTRUCCION) en los que ningún jabalí ha pisado una parcela silvestre que colinde con la ciudad, los humanos conquistan el territorio y dicha parcela pasa a ser territorio urbano con todas sus características.
+
+
+Sobre el terreno coexisten cuatro razas (breeds) de agente en el modelo:
+Personas. Son los habitantes de la zona urbanizada, se mueven hacia un destino aleatorio -priorizando el terreno urbanizado- hasta llegar a él. Su actitud ante los jabalíes puede ser adversa, los matan al verlos; neutral, los ignoran; o amigable, alimentándolos como si fueran mascotas. La población total de personas en esta simulación es fija.
+
+Jabalíes. Habitan predominantemente en la zona silvestre y están en continuo movimiento. Cada hora (tick) que pasa, escanean su entorno y actualizan su comportamiento acordemente: al detectar la presencia de una persona adversa o un depredador, se dirijen en dirección opuesta a él e incrementan su velocidad para huir; al detectar la de una persona amigable, dirigen su trayectoria a esta para ser alimentado; cuando en su vecindad coexisten más de 7 jabalíes, se siente abrumado y huye, cuando no hay ningún otro, dirige su trayectoria al jabalí más cercano. Cuando todo en su entorno está correcto, busca comida. Cada hora hay una posibilidad de que dos jabalíes que se encuentren cerca tengan una cría (cada jabalí puede tener un máximo de 2 crías por día). Los jabalíes sólo pueden morir si algo de su entorno les mata.
+
+Depredadores. Habitan predominantemente en la zona silvestre, pudiendo incurrir en la ciudad cuando perciben a una presa pero volviendo rápidamente. Cada tick buscarán a una presa si es que no hubieran seleccionado ya a una. Se dirigen hacia ella y cuando la distancia es inferior o igual a 1, la matan. Cuando se quedan sin objetivo, deambulan (tendiendo a situarse en el centro geométrico de la zona silvestre). La población de deprededadores es estática a lo largo de la ejecución. 
+
+Comida. Objetivo de los jabalíes. Se genera automáticamente en la zona silvestre por el crecimiento de pasto (esta comida es verde). En la ciudad, conforme pasan las horas se genera automáticamente en los lugares designados para contenedores ordinarios, que por falta de control permiten la entrada de jabalíes que buscan alimento. Además, las personas tienen una probabilidad de tirar sus propios desechos a la calle mientras caminan (esta basura es marrón).
+
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+Mediante los diferentes sliders se pueden modificar todos los parámetros del modelo. Diferentes configuraciones iniciales derivan en diferente comportamiento por parte de personas y jabalíes. Una vez que todo esté configurado, presione el botón de setup que creará un mundo nuevo y lo poblará acorde a la configuración; después, presiona go para iniciar el reloj.
+
+# GUÍA DE CONFIGURACIÓN:
+tasa_reproduccion_jabalies: Establece la probabilidad de que cada jabalí se reproduzca en un día. Los jabalíes se reproducen a las 00.00 y que lo hagan o no queda determinado por un número aleatorio de 0 a 99, cuando dicho número sea inferior al valor de tasa_reproduccion_jabalies, esa tortuga se reproducirá, dando lugar a un nuevo individuo.
+
+poblacion_jabalies_inicial: Establece la cantidad de jabalíes que se generan en el setup dentro de la zona silvestre.
+
+probabilidad_arrojar_basura: Establece la probabilidad de que cada ciudadano arroje desechos orgánicos por la calle mientras camina. Cada vez que da un paso, se genera un número aleatorio de 0 a 99, cuando dicho número sea inferior al valor de probabilidad_arrojar_basura, esa persona generará una comida en su parcela actual.
+
+dias_para_urbanizar: Cuando pasan dias_para_urbanizar días (cada día son 24 ticks) sin que un jabalí acceda a una parcela fronteriza de la zona silvestre, esta pasará a ser susceptible de urbanizarse (convertirse en ciudad).
+
+dias_para_desurbanizar: Cuando pasan dias_para_desurbanizar días (cada día son 24 ticks) sin que una persona acceda a una parcela fronteriza de zona urbana, esta pasará a ser susceptible de desurbanizarse (convertirse en zona silvestre).
+
+proporcion_contenedoresAA: Establece la probabilidad de que cada contenedor generado sea iniciado como contenedor inteligente. En la creación de contenedores, se genera un número aleatorio de 0 a 99, cuando dicho número es inferior a proporcion_contenedoresAA, el contenedor es inteligente. 
+
+poblacion_adversa: Establece la cantidad de habitantes de la ciudad con una actitud adversa hacia los jabalíes.
+
+poblacion_neutral: Establece la cantidad de habitantes de la ciudad con una actitud neutral hacia los jabalíes.
+
+poblacion_alimentadora: Establece la cantidad de habitantes de la ciudad con una actitud amigable hacia los jabalíes.
+
+poblacion_depredadores_inicial: Establece la cantidad de depredadores en la simulación.
+
+horas_cultivo: Establece la cantidad de ticks que pasan desde que se generan parcelas de comida en la zona silvestre hasta que se vuelven a generar.
+
+
+
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
-
-## THINGS TO TRY
-
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
-
-## CREDITS AND REFERENCES
-
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+En muchos casos, la presencia de jabalíes en territorio urbano es casi inevitable. La reproducción de jabalíes puede descontrolarse con facilidad alterando los valores de población de depredadores o reduciendo demasiado la cantidad de ciudadanos adversos. Para que los jabalíes invadan la ciudad, es notablemente relevante la tendencia de los ciudadanos a tirar basura, más incluso que la proporción de contenedores inteligentes.
 @#$#@#$#@
 default
 true
