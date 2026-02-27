@@ -1,15 +1,15 @@
 ; SLIDERS
-; prob_rep_jabalies
-; njabaliesinicial
-; prob_littering
-; min_dias_construccion
-; min_dias_derrumbe
-; nadversos
-; nneutrales
-; nalimentadores
-; numdepredadores
+; tasa_reproduccion_jabalies
+; poblacion_jabalies_inicial
+; probabilidad_arrojar_basura
+; dias_para_urbanizar
+; dias_para_desurbanizar
+; poblacion_adversa
+; poblacion_neutral
+; poblacion_alimentadora
+; poblacion_depredadores_inicial
 ; horas_cultivo
-; prob_contenedor_inteligente
+; proporcion_contenedoresAA
 
 ; MONITORES
 ; dia
@@ -48,7 +48,7 @@ to setup
 
   ; CONTENEDORES --------------------------------
   ask patches with [pcolor = grey and (pxcor mod 8 = 0) and (pycor mod 8 = 0)] [
-    ifelse (random 100 < prob_contenedor_inteligente)
+    ifelse (random 100 < proporcion_contenedoresAA)
     [ set pcolor yellow - 1 ] ; contenedores inteligentes
     [ set pcolor green - 2  ] ; contenedores normales
   ]
@@ -85,7 +85,7 @@ end
 
 ; Depredadores -----------------------------------
 to generar_depredadores
-  create-depredadores numdepredadores [
+  create-depredadores poblacion_depredadores_inicial [
     setxy [pxcor] of one-of patches with [pcolor = green]
           [pycor] of one-of patches with [pcolor = green]
     set color red
@@ -96,7 +96,7 @@ end
 
 ; Jabalies --------------------------------------
 to generar_jabalies
-  create-jabalies njabaliesinicial [
+  create-jabalies poblacion_jabalies_inicial [
     setxy [pxcor] of one-of patches with [pcolor = green ] [pycor ] of one-of patches with [pcolor = green]
     set color 33
     set shape "cow"
@@ -108,16 +108,16 @@ end
 
 ; Personas --------------------------------------
 to generar_personas
-  ; nadversos, nneutrales y nalimentadores son sliders [0, 100]
-   create-personas nadversos [
+  ; poblacion_adversa, poblacion_neutral y poblacion_alimentadora son sliders [0, 100]
+   create-personas poblacion_adversa [
     set tipo "adverso"
     set color red
   ]
-  create-personas nneutrales [
+  create-personas poblacion_neutral [
     set tipo "neutral"
     set color white
   ]
-  create-personas nalimentadores [
+  create-personas poblacion_alimentadora [
     set tipo "alimentador"
     set color pink
   ]
@@ -181,19 +181,19 @@ to go
     set ticks_since_jabali ticks_since_jabali + 1
     set ticks_since_human ticks_since_human + 1
   ]
-  ask patches with [(ticks_since_jabali / 24) > min_dias_construccion and pcolor = green and ticks_since_jabali > ticks_since_human] [
+  ask patches with [(ticks_since_jabali / 24) > dias_para_urbanizar and pcolor = green and ticks_since_jabali > ticks_since_human] [
     if (count neighbors4 with [pcolor != green] > 0) ; si lindo con la ciudad
     [
       ask comidas-here [die]
       set pcolor grey
       if (pxcor mod 8 = 0) and (pycor mod 8 = 0) [
-        ifelse (random 100 < prob_contenedor_inteligente)
+        ifelse (random 100 < proporcion_contenedoresAA)
         [ set pcolor yellow - 1 ]
         [ set pcolor green - 2  ]
       ]
     ]
   ]
-  ask patches with [(ticks_since_human / 24) > min_dias_derrumbe and pcolor != green and ticks_since_human > ticks_since_jabali] [
+  ask patches with [(ticks_since_human / 24) > dias_para_desurbanizar and pcolor != green and ticks_since_human > ticks_since_jabali] [
     if (count neighbors4 with [pcolor = green] > 0)  ; si lindo con el campo
       [
         set pcolor green
@@ -272,7 +272,7 @@ to mover_personas
   face destino
   wiggle 0.2
   ask patch-here [set ticks_since_human 0]
-  if (random 100) < prob_littering [
+  if (random 100) < probabilidad_arrojar_basura [
     hatch 1 [
       set breed comidas
       set color brown
@@ -379,7 +379,7 @@ to reproducirjabali
   let familia count jabalies in-radius 3
   if pareja > 2 and familia < 7[
     if(nhijos < 2)[
-    if random 100 < prob_rep_jabalies
+    if random 100 < tasa_reproduccion_jabalies
     [
       hatch 1 [
       set color 33
@@ -449,9 +449,9 @@ to wiggle [distancia]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-513
+796
 10
-1074
+1357
 572
 -1
 -1
@@ -476,10 +476,10 @@ ticks
 30.0
 
 BUTTON
-22
-59
-85
-92
+513
+79
+597
+123
 NIL
 setup
 NIL
@@ -493,25 +493,25 @@ NIL
 1
 
 SLIDER
-23
-100
-195
-133
-njabaliesinicial
-njabaliesinicial
+20
+77
+244
+110
+poblacion_jabalies_inicial
+poblacion_jabalies_inicial
 1
 50
-45.0
+46.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-131
-59
-194
-92
+622
+78
+708
+123
 NIL
 go
 T
@@ -525,12 +525,12 @@ NIL
 1
 
 SLIDER
-23
-201
-195
-234
-nadversos
-nadversos
+19
+163
+246
+196
+poblacion_adversa
+poblacion_adversa
 0
 100
 15.0
@@ -540,12 +540,12 @@ NIL
 HORIZONTAL
 
 SLIDER
-23
-236
-195
-269
-nalimentadores
-nalimentadores
+19
+197
+247
+230
+poblacion_alimentadora
+poblacion_alimentadora
 0
 100
 20.0
@@ -555,12 +555,12 @@ NIL
 HORIZONTAL
 
 SLIDER
-23
-270
-195
-303
-nneutrales
-nneutrales
+19
+231
+247
+264
+poblacion_neutral
+poblacion_neutral
 0
 100
 20.0
@@ -570,12 +570,27 @@ NIL
 HORIZONTAL
 
 SLIDER
-23
-338
-195
-371
-min_dias_construccion
-min_dias_construccion
+20
+356
+248
+389
+dias_para_urbanizar
+dias_para_urbanizar
+0
+100
+4.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+20
+390
+248
+423
+dias_para_desurbanizar
+dias_para_desurbanizar
 0
 100
 3.0
@@ -585,27 +600,12 @@ NIL
 HORIZONTAL
 
 SLIDER
-23
-372
-195
-405
-min_dias_derrumbe
-min_dias_derrumbe
-0
-100
-3.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-23
-168
-195
-201
-prob_rep_jabalies
-prob_rep_jabalies
+20
+287
+248
+320
+tasa_reproduccion_jabalies
+tasa_reproduccion_jabalies
 0
 100
 20.0
@@ -615,12 +615,12 @@ NIL
 HORIZONTAL
 
 SLIDER
-23
-304
-195
-337
-prob_littering
-prob_littering
+21
+498
+249
+531
+probabilidad_arrojar_basura
+probabilidad_arrojar_basura
 0
 100
 5.0
@@ -630,10 +630,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-218
-62
-298
-107
+265
+77
+345
+122
 NIL
 hora
 17
@@ -641,13 +641,13 @@ hora
 11
 
 PLOT
-217
-115
-490
-348
+265
+129
+772
+362
 Jabalies
 horas
-NIL
+poblacion_jabalies
 0.0
 10.0
 0.0
@@ -660,12 +660,12 @@ PENS
 "pen-1" 1.0 0 -7500403 true "" "plot jabaliesmuertos"
 
 SLIDER
-24
-453
-196
-486
-numdepredadores
-numdepredadores
+19
+120
+245
+153
+poblacion_depredadores_inicial
+poblacion_depredadores_inicial
 0
 100
 10.0
@@ -675,10 +675,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-25
-494
-197
-527
+21
+533
+250
+566
 horas_cultivo
 horas_cultivo
 0
@@ -690,12 +690,12 @@ NIL
 HORIZONTAL
 
 SLIDER
-17
-531
-215
-564
-prob_contenedor_inteligente
-prob_contenedor_inteligente
+21
+463
+249
+496
+proporcion_contenedoresAA
+proporcion_contenedoresAA
 0
 100
 12.0
@@ -705,13 +705,13 @@ NIL
 HORIZONTAL
 
 PLOT
-218
-351
-498
-554
+265
+366
+775
+569
 Evolución terreno
 horas
-N casillas
+Numero_casillas
 0.0
 720.0
 0.0
@@ -724,10 +724,10 @@ PENS
 "pen-1" 1.0 0 -7500403 true "" "ifelse(ticks > 1)[plot count patches with [pcolor != green]][plot 800]"
 
 MONITOR
-309
-63
-390
-108
+356
+78
+437
+123
 dias
 dias
 0
