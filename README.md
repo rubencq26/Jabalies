@@ -9,7 +9,7 @@
 
 ### Link codigo
 
-https://prod.liveshare.vsengsaas.visualstudio.com/join?ED5C73960B2F410F77BF99C0A84A250B7597
+https://prod.liveshare.vsengsaas.visualstudio.com/join?1B3527337B61F98AE165D46936532977812F
 
 ### Tamaño de mundo
 30x30
