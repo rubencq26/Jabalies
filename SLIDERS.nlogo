@@ -9,8 +9,14 @@
 ; nneutrales
 ; nalimentadores
 ; numdepredadores
+; horas_cultivo
 
-globals [dias hora]
+
+;MONITORES
+;dia
+;hora
+
+globals [jabaliesmuertos dias hora]
 
 ; -------------------------------------------------------------------------------------------------
 ;                  RAZAS
@@ -22,8 +28,8 @@ breed [depredadores depredador]
 
 depredadores-own[velocidad objetivo]
 patches-own [polucion ticks_since_jabali ticks_since_human]
-jabalies-own [energia felicidad velocidad xcomida ycomida nhuida]
-personas-own [satisfaccion tipo velocidad destino] ; ( satisfaccion: [0, 100] )  ( tipo: "adverso" || "neutral" || "alimentador" )
+jabalies-own [velocidad nhuida]
+personas-own [tipo velocidad destino] ; ( tipo: "adverso" || "neutral" || "alimentador" )
 
 
 
@@ -43,7 +49,7 @@ to setup
 
   ; CONTENEDORES --------------------------------
   ask patches with [pcolor = grey and (pxcor mod 8 = 0) and (pycor mod 8 = 0)] [
-    ifelse (random 100 < 30) ; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ifelse (random 100 < prob_contenedor_inteligente)
     [ set pcolor yellow - 1 ] ; contenedores inteligentes
     [ set pcolor green - 2  ] ; contenedores normales
   ]
@@ -63,7 +69,7 @@ to setup
           set breed comidas
           set color green - 2
           set shape "plant"
-         ]
+        ]
       ]
     ]
   ]
@@ -83,7 +89,7 @@ to generar_depredadores
   create-depredadores numdepredadores [
     setxy [pxcor] of one-of patches with [pcolor = green]
           [pycor] of one-of patches with [pcolor = green]
-    set color black
+    set color red
     set shape "wolf"
     set velocidad 0.15
   ]
@@ -96,10 +102,6 @@ to generar_jabalies
     set color 33
     set shape "cow"
     set velocidad 0.1
-    set felicidad random 100
-    set energia random 100
-    set xcomida -1
-    set ycomida -1
     set nhuida 0
   ]
 end
@@ -107,22 +109,22 @@ end
 ; Personas --------------------------------------
 to generar_personas
   ; nadversos, nneutrales y nalimentadores son sliders [0, 100]
-   create-personas 5 [ ; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   create-personas nadversos [
     set tipo "adverso"
     set color red
   ]
-  create-personas 5 [ ; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  create-personas nneutrales [
     set tipo "neutral"
     set color white
   ]
-  create-personas 5 [ ; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  create-personas nalimentadores [
     set tipo "alimentador"
     set color pink
   ]
   ask personas [
-    set satisfaccion (random 10) + 45
     set shape "person"
-    setxy [pxcor] of one-of patches with [pcolor = gray] [pycor] of one-of patches with [pcolor = gray]
+    setxy [pxcor] of one-of patches with [pcolor = gray]
+          [pycor] of one-of patches with [pcolor = gray]
     set velocidad 0.1
     set destino one-of patches with [ pcolor = gray ]
   ]
@@ -133,28 +135,30 @@ end
 ; -------------------------------------------------------------------------------------------------
 ;                  GO
 ; -------------------------------------------------------------------------------------------------
+; boton go repeticion
 
 to go
 
-  while [count jabalies > 0] [
-    set hora ticks mod 24
-    ; DINAMICA DE JABALIES ----------------------
-    ask jabalies [
-      percibirjabali
-      moverjabali
-    ]
-    ask n-of 5 jabalies [
-      reproducirjabali
-    ]
+  if count jabalies <= 0 [ stop ]
+  set hora ticks mod 24
+  set dias ticks
+  ; DINAMICA DE JABALIES ----------------------
+  ask jabalies [
+    percibirjabali
+    moverjabali
+  ]
+  ask n-of 5 jabalies [
+    reproducirjabali
+  ]
 
-    ; DINAMICA DE DEPREDADORES ------------------
+  ; DINAMICA DE DEPREDADORES ------------------
     ask depredadores[
-      percibirdepredador
-      moverdepredador
-    ]
+    percibirdepredador
+    moverdepredador
+  ]
 
-    ; DINAMICA DE PERSONAS ----------------------
-    ask personas [
+  ; DINAMICA DE PERSONAS ----------------------
+  ask personas [
       mover_personas
       let salvajes jabalies in-cone 5 60
       if tipo = "adverso" and any? salvajes [cazar (one-of salvajes)]
@@ -178,17 +182,26 @@ to go
     ]
     ask patches with [(ticks_since_jabali / 24) > min_dias_construccion and pcolor = green and ticks_since_jabali > ticks_since_human] [
       if (count neighbors4 with [pcolor != green] > 0) and count comidas-here = 0 ; si lindo con la ciudad
-        [ set pcolor grey ]
+        [
+
+          set pcolor grey
+          if (pxcor mod 8 = 0) and (pycor mod 8 = 0) [
+
+            ifelse (random 100 < prob_contenedor_inteligente) [set pcolor yellow - 1] [set pcolor green - 2]
+
+          ]
+
+        ]
     ]
     ask patches with [(ticks_since_human / 24) > min_dias_derrumbe and pcolor != green and ticks_since_human > ticks_since_jabali] [
       if (count neighbors4 with [pcolor = green] > 0) and count comidas-here = 0  ; si lindo con el campo
-        [ set pcolor green ]
+        [ set pcolor green]
     ]
 
 
     tick
 
-  ] ; FIN DEL WHILE ==> LOS JABALIES SE EXTINGUIERON
+
 
 end
 
@@ -244,24 +257,19 @@ end
 
 ; PERSONAS --------------------------------------
 to mover_personas
-  let movimiento velocidad
-
   if patch-here = destino [
     ifelse (random 10) = 0
-    [set destino one-of patches with [ pcolor = green ]]
-    [set destino one-of patches with [ pcolor = gray ]]
-  ]
-
-  if (ticks mod 24 > 20 or ticks mod 24 < 4)and (random 5) = 0 [
-    set movimiento velocidad - 0.05
+    [
+      set destino one-of patches in-radius 2.5 with [ pcolor = green ]
+      if (destino = nobody) [set destino one-of patches in-radius 2.5 with [ pcolor = gray ]]
+    ]
+    [
+      set destino one-of patches in-radius 2.5 with [ pcolor = gray ]]
+      if (destino = nobody) [set destino one-of patches in-radius 2.5 with [ pcolor = green ]]
   ]
   face destino
-  repeat 10 [
-    wiggle movimiento
-    ask patch-here [set ticks_since_human 0]
-  ]
-
-
+  repeat 10 [ wiggle 0.1 ]
+  ask patch-here [set ticks_since_human 0]
   if (random 100) < prob_littering [
     hatch 1 [
       set breed comidas
@@ -278,6 +286,8 @@ to cazar [caza]
     ask patch-here [set ticks_since_human 0]
   ]
   ask caza [die]
+  set jabaliesmuertos jabaliesmuertos + 1
+
 end
 
 to alimentar [mascotita]
@@ -286,11 +296,6 @@ to alimentar [mascotita]
     repeat 10 [wiggle 0.01]
     ask patch-here [set ticks_since_human 0]
   ]
-  hatch 1 [
-      set breed comidas
-      set color brown
-      set shape "box"
-    ]
 end
 
 
@@ -307,11 +312,13 @@ to percibirjabali ; actualiza la direc y veloc segun el entorno
     ]
     if any? peligros [
       set nhuida 10
+      face one-of peligros
       rt 180
       huir
     ]
     if any? cazadores[
       set nhuida 10
+      face one-of cazadores
       rt 180
       huir
     ]
@@ -358,20 +365,16 @@ to buscarcomida
 end
 
 to huir
-  rt 180
-  repeat 10 [ set velocidad 0.025 ]
-  set felicidad felicidad - 15
+  set velocidad 0.25
+  repeat 10 [ wiggle velocidad ]
 end
 
 to comer
   let alimento count comidas-on patch-here
   ask comidas-on patch-here [die]
-  set felicidad felicidad + (10 * alimento)
-  if felicidad > 100 [ set felicidad 100 ]
 end
 
 to moverjabali
-  set felicidad felicidad - 5
   if (ticks mod 24 > 20 or ticks mod 24 < 4) [
     repeat 10 [
       wiggle velocidad
@@ -389,10 +392,6 @@ to reproducirjabali
       set color 33
       set shape "cow"
       set velocidad 0.1
-      set felicidad random 100
-      set energia random 100
-      set xcomida -1
-      set ycomida -1
       set nhuida 0
       ]
     ]
@@ -401,6 +400,7 @@ end
 
 ; DEPREDADORES -------------------------------------
 to percibirdepredador
+  set objetivo nobody
   ; solo en zona verde
   if [pcolor] of patch-here != green [
     rt 180
@@ -411,7 +411,7 @@ to percibirdepredador
   let presas jabalies in-cone 5 60
 
   if any? presas [
-    set objetivo one-of presas
+    set objetivo min-one-of presas [distance myself]
     face objetivo
   ]
 
@@ -419,20 +419,22 @@ end
 
 to moverdepredador
 
-  ifelse objetivo != nobody [
+  if objetivo != nobody [
 
-    ifelse [pycor] of objetivo any? neighbors [
+    if distance objetivo > 1 [
       fd velocidad
     ]
-    [
+
+    if distance objetivo <= 1 [
       ask objetivo [ die ]
+      set jabaliesmuertos jabaliesmuertos + 1
       set objetivo nobody
     ]
 
   ]
 
   ; Movimiento aleatorio si no hay objetivo
-  [
+  if objetivo = nobody [
     rt random 20 - random 20
     repeat 10[
       wiggle velocidad
@@ -451,10 +453,10 @@ to wiggle [distancia]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-513
+512
 10
-1084
-582
+898
+397
 -1
 -1
 9.23
@@ -467,10 +469,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--30
-30
--30
-30
+-20
+20
+-20
+20
 0
 0
 1
@@ -516,7 +518,7 @@ BUTTON
 92
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
@@ -535,7 +537,7 @@ nadversos
 nadversos
 0
 100
-50.0
+31.0
 1
 1
 NIL
@@ -550,7 +552,7 @@ nalimentadores
 nalimentadores
 0
 100
-50.0
+31.0
 1
 1
 NIL
@@ -565,7 +567,7 @@ nneutrales
 nneutrales
 0
 100
-49.0
+34.0
 1
 1
 NIL
@@ -580,7 +582,7 @@ min_dias_construccion
 min_dias_construccion
 0
 100
-6.0
+2.0
 1
 1
 NIL
@@ -595,7 +597,7 @@ min_dias_derrumbe
 min_dias_derrumbe
 0
 100
-6.0
+2.0
 1
 1
 NIL
@@ -610,7 +612,7 @@ prob_rep_jabalies
 prob_rep_jabalies
 0
 100
-60.0
+27.0
 1
 1
 NIL
@@ -625,7 +627,7 @@ prob_littering
 prob_littering
 0
 100
-0.0
+1.0
 1
 1
 NIL
@@ -647,9 +649,9 @@ PLOT
 115
 490
 348
-plot 1
-NIL
-NIL
+Jabalies
+hora
+jabalies
 0.0
 10.0
 0.0
@@ -658,34 +660,34 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -7858858 true "" "plot count jabalies"
-"pen-1" 1.0 0 -11033397 true "" "plot count personas"
+"default" 3.0 0 -7858858 true "" "plot count jabalies"
+"pen-1" 1.0 0 -16448764 true "" "plot jabaliesmuertos"
 
 SLIDER
 24
 412
-196
+195
 445
-prob_
-prob_
+prob_contenedor_inteligente
+prob_contenedor_inteligente
 0
 100
-50.0
+7.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-24
-453
-196
-486
+23
+134
+195
+167
 numdepredadores
 numdepredadores
 0
 100
-50.0
+16.0
 1
 1
 NIL
@@ -705,6 +707,36 @@ horas_cultivo
 1
 NIL
 HORIZONTAL
+
+PLOT
+216
+361
+492
+586
+plot 1
+NIL
+NIL
+0.0
+50.0
+0.0
+50.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -14439633 true "" "plot count patches with [pcolor = green]"
+"pen-1" 1.0 0 -7500403 true "" "plot count patches with [ pcolor != green]"
+
+MONITOR
+306
+62
+388
+107
+NIL
+dias
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
